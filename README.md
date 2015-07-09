@@ -10,6 +10,7 @@ things I already have done:
 - random playing function,
 - clear all list button,
 - mute button,
+- looping all play list
 
 to do:
 - editable play list,
