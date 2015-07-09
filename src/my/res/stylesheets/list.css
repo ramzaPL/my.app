@@ -1,0 +1,43 @@
+.root {
+	-fx-background-color: #232323;
+	
+}
+
+.control-buttons {
+	-fx-border-style: none ;
+	
+	-fx-background-color: rgba(0, 0, 0, 0);
+	-fx-background-radius: 0em;
+	-fx-border-radius: 0em;
+	
+	-fx-text-fill: #cccccc;
+	-fx-font-family: "CALIBRI";
+	-fx-font-size: 12px;
+	
+	-fx-min-height: 15px;
+	-fx-max-height: 15px;
+	-fx-max-width: 20px;
+	-fx-min-width: 20px;
+}
+
+.media-name {
+	-fx-font-family: "CALIBRI";
+	-fx-font-size: 13px;
+	-fx-text-fill: #cccccc;
+	
+	-fx-border-color: #eeeeee;
+	-fx-border-width: 0 0 2 0;
+	
+	-fx-min-width: 588px;
+	-fx-max-width: 588px;
+	-fx-min-height: 20px;
+	-fx-max-height: 20px;
+}
+
+.scroll-pane > .viewport {
+	-fx-background-color: transparent;
+}
+
+.scroll-pane {
+	-fx-background-color: #686868;
+}
