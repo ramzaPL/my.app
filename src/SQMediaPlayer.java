@@ -44,7 +44,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 	private Stage PRIMARY_STAGE;		//stage
 	private Scene scene;				//container for all components
 	private TilePane buttonTile;		//container for buttons
-	private TilePane labelTile;		//container for labels
+	private HBox labelTile;		//container for labels
 	private VBox vbox;				//container for components
 	private Button play;				//starts to play music
 	private Button previous;			//plays previous song
@@ -59,7 +59,8 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 	private Button mute;			//mutes media
 	private Button list;			//shows editable list
 	private ArrayList<Button> buttons;	//array of buttons
-	private Label timeLabel;	//label
+	private Label timeLabel;		//label
+	private Label currentMedia;		//name of currently playing media
 	private TextArea playListArea; 		//list of songs
 	private ArrayList<URI> playList;		//paths to medias
 	private ArrayList<String> mediaName;	//names of medias
@@ -94,6 +95,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 	 */
 	private EditableList editableList;
 	private boolean listShown = false;
+	private Label[] mediaFileName;
 	
 	public static void main(String[] args) {
       launch(args);
@@ -159,7 +161,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 		
     	createControlButtons();
 		
-    	createTimeLabel();
+    	createLabels();
     	
     	createSongsListsTextArea();
     	
@@ -283,14 +285,17 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 	/*
 	 * Creates time label
 	 */
-	private void createTimeLabel() {
+	private void createLabels() {
 		timeLabel = new Label("00:00/00:00");
     	
-    	labelTile = new TilePane();
+    	labelTile = new HBox(20);
     	labelTile.setAlignment(Pos.TOP_RIGHT);
-    	labelTile.setHgap(15);
-    	labelTile.setVgap(10);
-    	labelTile.getChildren().addAll(timeLabel);
+    	
+    	currentMedia = new Label();
+    	currentMedia.setPrefSize(300, 20);
+    	currentMedia.getStyleClass().add("lbl");
+    	    	
+    	labelTile.getChildren().addAll(currentMedia, timeLabel);
     	
     	vbox.getChildren().add(labelTile);
     	VBox.setMargin(labelTile, new Insets(0, 11, 0, 0));
@@ -586,6 +591,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 		
 		//reset time
 		timeLabel.setText("00:00/00:00");
+		currentMedia.setText("");
 		
 		//change icon of play/pause button
 		setPlayButtonImage("my/res/images/playButton.png");
@@ -616,6 +622,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 			List<File> list = chooser.showOpenMultipleDialog(PRIMARY_STAGE);
 			
 			loadPlayList(list); //refreshes play list
+			editableList.refreshList();
 		}
 	}
 
@@ -738,6 +745,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 				playerState = "PLAY";
 				
 				playMedia(playList.get(mediaIterator));
+				currentMedia.setText(Integer.toString(mediaIterator + 1) + ". " + mediaName.get(mediaIterator));
 				
 			} else if(playerState.equals("PLAY")) {
 				/*
@@ -767,6 +775,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 					mediaIterator = r.nextInt(playList.size());
 				}
 				playNewMedia(playList.get(mediaIterator), true);
+				currentMedia.setText(Integer.toString(mediaIterator + 1) + ". " + mediaName.get(mediaIterator));
 			
 			} else if(playerState.equals("PAUSE")) {
 				if( playMode.equals("NORMAL")) {
@@ -776,7 +785,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 					mediaIterator = r.nextInt(playList.size());
 				}
 				playNewMedia(playList.get(mediaIterator), false);
-			
+				currentMedia.setText(Integer.toString(mediaIterator + 1) + ". " + mediaName.get(mediaIterator));
 			}
 			/*
 			 * Action for previous button
@@ -795,7 +804,8 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 					mediaIterator = r.nextInt(playList.size());
 				}
 				playNewMedia(playList.get(mediaIterator), true);
-			
+				currentMedia.setText(Integer.toString(mediaIterator + 1) + ". " + mediaName.get(mediaIterator));
+				
 			} else if(playerState.equals("PAUSE")) {
 				if( playMode.equals("NORMAL")) {
 					checkPreviousMedia();
@@ -804,6 +814,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 					mediaIterator = r.nextInt(playList.size());
 				}
 				playNewMedia(playList.get(mediaIterator), false);
+				currentMedia.setText(Integer.toString(mediaIterator + 1) + ". " + mediaName.get(mediaIterator));
 			}
 			
 		}
@@ -853,11 +864,17 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 			Media currentMedia = new Media(path.toString());
 			mediaPlayer = new MediaPlayer(currentMedia);
 			mediaPlayer.play();
+			if(isMuted) {
+				mediaPlayer.setMute(true);
+			}
 			initMediaPlayerListeners();
 		
 		} else if(!mediaPlaying) {
 			Media currentMedia = new Media(path.toString());
 			mediaPlayer = new MediaPlayer(currentMedia);
+			if(isMuted) {
+				mediaPlayer.setMute(true);
+			}
 			initMediaPlayerListeners();
 		}
 	}
@@ -881,12 +898,18 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 		if(mediaPlayer != null){
 			
 			mediaPlayer.play();
+			if(isMuted) {
+				mediaPlayer.setMute(true);
+			}
 
 			
 		} else {
 			Media currentMedia = new Media(path.toString());
 			mediaPlayer = new MediaPlayer(currentMedia);
 			mediaPlayer.play();
+			if(isMuted) {
+				mediaPlayer.setMute(true);
+			}
 			initMediaPlayerListeners();
 		}
 		
@@ -935,6 +958,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 					mediaIterator = r.nextInt(playList.size());
 				}
 				playNewMedia(playList.get(mediaIterator), true);
+				currentMedia.setText(Integer.toString(mediaIterator + 1) + ". " + mediaName.get(mediaIterator));
 			}
 		});
 	}
@@ -988,6 +1012,14 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 	}
 	
 	/*
+	 * mediaIterator2 to set as mediaIterator
+	 */
+	public void setMediaIterator(Integer mediaIterator2) {
+		mediaIterator = mediaIterator2;
+		
+	}
+	
+	/*
 	 * Editable play list allows to "move" media on play list
 	 */
 	private class EditableList extends Application implements EventHandler<MouseEvent> {
@@ -1004,8 +1036,6 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 		
 		/*media files names*/
 		private VBox mediaFileList;
-		
-		private Label[] mediaFileName;
 		
 		/*Point where list window was, and where mouse clicked*/
 		private Point2D previousLocation, anchor;
@@ -1032,12 +1062,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 			
 			vbox.getChildren().add(createControlButtons());
 			
-			scrollPane = new ScrollPane();
-			scrollPane.setPrefSize(300, 482);
-			scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
-			scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
-			
-			mediaFileList = new VBox(0);
+			initScrollPane();
 			
 			initPlayList();
 			
@@ -1053,16 +1078,34 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 			
 		}
 
+		/*
+		 * initialize scroll pane 
+		 */
+		private void initScrollPane() {
+			scrollPane = new ScrollPane();
+			scrollPane.setPrefSize(300, 482);
+			scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
+			scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
+		}
+
 		public void showList() {
 			SECONDARY_STAGE.show();
 		}
 		
 		public void refreshList() {
+			vbox.getChildren().remove(scrollPane);
+			
+			initScrollPane();
+			initPlayList();
+			
+			vbox.getChildren().add(scrollPane);
+			VBox.setMargin(scrollPane, new Insets(0));
 			
 		}
 		
 		private void initPlayList() {
 			
+			mediaFileList = new VBox(0);
 			mediaFileName = new Label[mediaName.size()];
 			String prefix;
 			
@@ -1074,7 +1117,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 				mediaFileName[i].setId(Integer.toString(i));
 				mediaFileName[i].setOnMouseClicked(this);
 			}
-			mediaFileName[0].setStyle("-fx-border-width: 2 0 2 0");
+			mediaFileName[0].setStyle("-fx-border-width: 1 0 1 0");
 			
 			mediaFileList.getChildren().addAll(mediaFileName);
 			scrollPane.setContent(mediaFileList);
@@ -1093,21 +1136,25 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 					
 					setPlayButtonImage("my/res/images/pauseButton.png");
 					playMedia(playList.get(mediaIterator));
+					currentMedia.setText(Integer.toString(mediaIterator + 1) + ". " + mediaName.get(mediaIterator));
 					playerState = "PLAY";
 					
 				} else if(playerState.equals("PLAY")) {
 					playNewMedia(playList.get(mediaIterator), true);
+					currentMedia.setText(Integer.toString(mediaIterator + 1) + ". " + mediaName.get(mediaIterator));
 				}
 				
 			} else if(e.getButton().equals(MouseButton.SECONDARY)) {
 				final ContextMenu cm = new ContextMenu();
+				cm.setAutoHide(true);
+				
 				MenuItem play = new MenuItem("Play");
 				MenuItem moveDown = new MenuItem("Move down");
 				MenuItem moveUp = new MenuItem("Move up");
 				MenuItem delete = new MenuItem("Delete");
-				//MenuItem loop = new MenuItem("Play and loop");
+				MenuItem loop = new MenuItem("Play and loop");
 				
-				cm.getItems().addAll(moveUp, play, moveDown, delete);
+				cm.getItems().addAll(moveUp, play, moveDown, delete, loop);
 				
 				cm.show((Node) e.getSource(), e.getScreenX(), e.getScreenY());
 			}
@@ -1183,10 +1230,6 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 
 	}
 
-	public void setMediaIterator(Integer mediaIterator2) {
-		mediaIterator = mediaIterator2;
-		
-	}
 
 	
 }
