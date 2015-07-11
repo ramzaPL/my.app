@@ -1,5 +1,5 @@
 # my.app
-This is a media player i'm working on.
+This is the media player i'm working on.
 
 things I already have done:
 - GUI,
@@ -11,9 +11,15 @@ things I already have done:
 - clear all list button,
 - mute button,
 - looping all play list
+- editable play list:
+  - play media by double click on the name of it
 
 to do:
-- editable play list,
+- editable play list:
+  - changing the order of play list,
+  - adding by "drag and drop",
+  - auto refreshing,
+  - saving favourites play lists
 - switching between two different GUI's:
   - normal mode is done,
   - small mode always on top! <- ToDo
