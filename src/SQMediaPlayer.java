@@ -1,5 +1,3 @@
-
-
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
@@ -14,9 +12,14 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -81,11 +84,16 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 	private Point2D anchorPt;
 	private Point2D previousLocation;
 	/*
-	 * Object of MediaPlayer, provides base 
+	 * Object of MediaPlayer, provides basic 
 	 * functionality for player
 	 */
 	private MediaPlayer mediaPlayer;
 	private Duration duration;	//duration of currently playing media
+	/*
+	 * Editable list of loaded media
+	 */
+	private EditableList editableList;
+	private boolean listShown = false;
 	
 	public static void main(String[] args) {
       launch(args);
@@ -305,14 +313,12 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 	}
 
 	/*
-	 *  
+	 * creates small buttons
 	 */
 	private void createSmallButtons() {
 		Image icon;
-		/*
-    	 * creates small buttons
-    	 */
     	
+		//turn the volume off or on
     	mute = new Button();
     	icon = new Image(getClass().getResourceAsStream("my/res/images/mute.png"));
     	mute.setGraphic(new ImageView(icon));
@@ -323,20 +329,25 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
     	mute.setOnMouseReleased(e -> onHover(e));
     	mute.setOnMouseClicked(e -> {
     		
+    		/*
+    		 * checking if volume is muted or not
+    		 */
     		if(mediaPlayer != null && !isMuted) {
+    			//turning volume off
     			mediaPlayer.setMute(true);
     			mute.setStyle("-fx-border-color: #5555ff; -fx-border-width: 3px;");
     			mute.setOnMouseEntered(null);
     			mute.setOnMouseExited(null);
     			mute.setGraphic(new ImageView(new Image(getClass().getResourceAsStream("my/res/images/unMute.png"))));
-    			isMuted = true;
+    			isMuted = true;	//changing state
     			
     		} else if(mediaPlayer != null && isMuted) {
+    			//turning volume on
     			mediaPlayer.setMute(false);
     			mute.setOnMouseEntered(ev -> onHover(ev));
     	    	mute.setOnMouseExited(ev -> onExit(ev));
     	    	mute.setGraphic(new ImageView(new Image(getClass().getResourceAsStream("my/res/images/mute.png"))));
-    	    	isMuted = false;
+    	    	isMuted = false; //changing state
     		}
     		
     	});
@@ -350,12 +361,28 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
     	list.setOnMousePressed(e -> onPressed(e));
     	list.setOnMouseReleased(e -> onHover(e));
     	list.setOnMouseClicked(e -> {
-    		if(mediaName != null)
-				try {
-					new EditableList(mediaName, new Stage());
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
+    		if(mediaName != null) {
+    			
+    			/*
+    			 * checks if instance of editable list already exist
+    			 */
+    			if(editableList == null) {
+    				//if there's no instance then make one and show it
+    				editableList = new EditableList();
+    				editableList.showList();
+    				listShown = true; //list is shown
+    			
+    			} else {
+    				//if list already exist then refresh it
+    				editableList.refreshList();
+    				//if list was closed then show it again
+    				if(!listShown){
+    					editableList.showList();
+    				}
+    			}
+    			
+    		}
+				
     	});
     	
     	TilePane smallButtonsTile = new TilePane();
@@ -463,6 +490,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
     	shuffle.getStyleClass().add("top_left");
     	icon = new Image(getClass().getResourceAsStream("my/res/images/shuffleButton.png"));
     	shuffle.setGraphic(new ImageView(icon));
+    	shuffle.setDisable(true);
     	shuffle.setPadding(new Insets(7, 0, 0, 5));
     	shuffle.setOnMouseEntered(e -> onHover(e));
     	shuffle.setOnMouseExited(e -> onExit(e));
@@ -506,6 +534,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
     	equalizer = new Button("EQ");
     	equalizer.getStyleClass().add("bottom_left");
     	equalizer.setPadding(new Insets(0, 0, 5, 5));
+    	equalizer.setDisable(true);
     	equalizer.setOnMouseEntered(e -> onHover(e));
     	equalizer.setOnMouseExited(e -> onExit(e));
     	equalizer.setOnMousePressed(e -> onPressed(e));
@@ -559,8 +588,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 		timeLabel.setText("00:00/00:00");
 		
 		//change icon of play/pause button
-		Image newIcon = new Image(getClass().getResourceAsStream("my/res/images/playButton.png"));
-		play.setGraphic(new ImageView(newIcon));
+		setPlayButtonImage("my/res/images/playButton.png");
 		//change state to PAUSE
 		playerState = "PAUSE";
 	}
@@ -706,8 +734,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 				/*
 				 * plays music and changes image to pause symbol, and state to playing value
 				 */
-				Image newIcon = new Image(getClass().getResourceAsStream("my/res/images/pauseButton.png"));
-				play.setGraphic(new ImageView(newIcon));
+				setPlayButtonImage("my/res/images/pauseButton.png");
 				playerState = "PLAY";
 				
 				playMedia(playList.get(mediaIterator));
@@ -716,8 +743,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 				/*
 				 * stops music and changes image to play symbol, and state to pause value
 				 */
-				Image newIcon = new Image(getClass().getResourceAsStream("my/res/images/playButton.png"));
-				play.setGraphic(new ImageView(newIcon));
+				setPlayButtonImage("my/res/images/playButton.png");
 				playerState = "PAUSE";
 				
 				pauseMedia();
@@ -783,6 +809,14 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 		}
 	}
 
+	/**
+	 * 
+	 */
+	private void setPlayButtonImage(String localPath) {
+		Image newIcon = new Image(getClass().getResourceAsStream(localPath));
+		play.setGraphic(new ImageView(newIcon));
+	}
+
 	/*
 	 * checks if there's a media file before current 
 	 * and sets iterator at previous file, 
@@ -821,7 +855,7 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 			mediaPlayer.play();
 			initMediaPlayerListeners();
 		
-		} else if(!mediaPlaying && mediaPlayer != null) {
+		} else if(!mediaPlaying) {
 			Media currentMedia = new Media(path.toString());
 			mediaPlayer = new MediaPlayer(currentMedia);
 			initMediaPlayerListeners();
@@ -952,4 +986,207 @@ public class SQMediaPlayer extends Application implements EventHandler<MouseEven
 			});
 		}
 	}
+	
+	/*
+	 * Editable play list allows to "move" media on play list
+	 */
+	private class EditableList extends Application implements EventHandler<MouseEvent> {
+
+		private Stage SECONDARY_STAGE;
+		private Scene SCENE;
+		
+		private ScrollPane scrollPane;
+		private VBox vbox;
+		
+		/*Control buttons*/
+		private Button exit;
+		private Button minimize;
+		
+		/*media files names*/
+		private VBox mediaFileList;
+		
+		private Label[] mediaFileName;
+		
+		/*Point where list window was, and where mouse clicked*/
+		private Point2D previousLocation, anchor;
+		
+		
+		public EditableList() {
+
+			try {
+				start(new Stage());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+		}
+		
+		@Override
+		public void start(Stage primaryStage) throws Exception {
+			
+			SECONDARY_STAGE = primaryStage;
+			SECONDARY_STAGE.setResizable(false);
+			SECONDARY_STAGE.initStyle(StageStyle.TRANSPARENT);
+			
+			vbox = new VBox(2);
+			
+			vbox.getChildren().add(createControlButtons());
+			
+			scrollPane = new ScrollPane();
+			scrollPane.setPrefSize(300, 482);
+			scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
+			scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
+			
+			mediaFileList = new VBox(0);
+			
+			initPlayList();
+			
+			vbox.getChildren().add(scrollPane);
+			VBox.setMargin(scrollPane, new Insets(0));
+			
+			SCENE = new Scene(vbox, 300, 500);
+			SCENE.getStylesheets().add("my/res/stylesheets/list.css");
+			
+			initMovable();
+			
+			SECONDARY_STAGE.setScene(SCENE);
+			
+		}
+
+		public void showList() {
+			SECONDARY_STAGE.show();
+		}
+		
+		public void refreshList() {
+			
+		}
+		
+		private void initPlayList() {
+			
+			mediaFileName = new Label[mediaName.size()];
+			String prefix;
+			
+			for(int i = 0; i < mediaFileName.length; i++) {
+				prefix = "  " + (i+1) + ". ";
+				mediaFileName[i] = new Label(prefix + mediaName.get(i));
+				mediaFileName[i].getStyleClass().add("media-name");
+				mediaFileName[i].setWrapText(false);
+				mediaFileName[i].setId(Integer.toString(i));
+				mediaFileName[i].setOnMouseClicked(this);
+			}
+			mediaFileName[0].setStyle("-fx-border-width: 2 0 2 0");
+			
+			mediaFileList.getChildren().addAll(mediaFileName);
+			scrollPane.setContent(mediaFileList);
+		}
+
+		@Override
+		public void handle(MouseEvent e) {
+			
+			if(e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 2) {
+				
+				mediaIterator = Integer.parseInt(((Label)e.getSource()).getId());
+				if(playerState.equals("PAUSE")) {
+					if(mediaPlayer != null) {
+						mediaPlayer.stop();
+					}
+					
+					setPlayButtonImage("my/res/images/pauseButton.png");
+					playMedia(playList.get(mediaIterator));
+					playerState = "PLAY";
+					
+				} else if(playerState.equals("PLAY")) {
+					playNewMedia(playList.get(mediaIterator), true);
+				}
+				
+			} else if(e.getButton().equals(MouseButton.SECONDARY)) {
+				final ContextMenu cm = new ContextMenu();
+				MenuItem play = new MenuItem("Play");
+				MenuItem moveDown = new MenuItem("Move down");
+				MenuItem moveUp = new MenuItem("Move up");
+				MenuItem delete = new MenuItem("Delete");
+				//MenuItem loop = new MenuItem("Play and loop");
+				
+				cm.getItems().addAll(moveUp, play, moveDown, delete);
+				
+				cm.show((Node) e.getSource(), e.getScreenX(), e.getScreenY());
+			}
+			
+		}
+
+		private TilePane createControlButtons() {
+			
+			exit = new Button("X");
+			exit.getStyleClass().add("control-buttons");
+			exit.setPadding(new Insets(1));
+			/*Adding behavior on different mouse actions*/
+			exit.setOnMouseEntered(e -> {
+				exit.setStyle("-fx-background-color: rgba(230, 0, 0, 130)");
+			});
+			
+			exit.setOnMouseExited(e -> {
+				exit.setStyle("fx-background-fills: transparent");
+			});
+			
+			exit.setOnMouseClicked(e -> {
+				SECONDARY_STAGE.hide();
+				listShown = false;
+			});
+			
+			minimize = new Button("---");
+			minimize.getStyleClass().add("control-buttons");
+			minimize.setPadding(new Insets(1));
+			minimize.setOnMouseEntered(e -> {
+				minimize.setStyle("-fx-background-color: rgba(0, 150, 220, 130)");
+			});
+			
+			minimize .setOnMouseExited(e -> {
+				minimize.setStyle("fx-background-fills: transparent");
+			});
+			
+			minimize.setOnMouseClicked(e -> {
+				SECONDARY_STAGE.setIconified(true);
+			});
+			
+			TilePane controlButtonsTile = new TilePane();
+			controlButtonsTile.setAlignment(Pos.TOP_RIGHT);
+			controlButtonsTile.setHgap(0);
+			controlButtonsTile.getChildren().addAll(minimize, exit);
+			
+			return controlButtonsTile;
+		}
+
+		private void initMovable() {
+			
+			/*Point where top left corner of stage was when showed up*/
+			SECONDARY_STAGE.setOnShown(event -> {
+				previousLocation = new Point2D(SECONDARY_STAGE.getX(), SECONDARY_STAGE.getY());
+			});
+			
+			/*Point where user clicked on scene to drag the window*/
+			SCENE.setOnMousePressed(mouseEvent -> {
+				anchor = new Point2D(mouseEvent.getScreenX(), mouseEvent.getScreenY());
+			});
+			
+			SCENE.setOnMouseDragged(mouseEvent -> {
+				if(anchor != null && previousLocation != null) {
+					SECONDARY_STAGE.setX(previousLocation.getX() + mouseEvent.getScreenX() - anchor.getX());
+					SECONDARY_STAGE.setY(previousLocation.getY() + mouseEvent.getScreenY() - anchor.getY());
+				}
+			});
+			
+			/*Remembering new location on screen*/
+			SCENE.setOnMouseReleased(mouseEvent -> {
+				previousLocation = new Point2D(SECONDARY_STAGE.getX(), SECONDARY_STAGE.getY());
+			});
+		}
+
+	}
+
+	public void setMediaIterator(Integer mediaIterator2) {
+		mediaIterator = mediaIterator2;
+		
+	}
+
+	
 }
